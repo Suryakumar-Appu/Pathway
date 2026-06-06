@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pathway</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --cream: #f5f0e8;
+  --dark: #1a1a1a;
+  --wood: #4a2e0a;
+}
+
+body {
+  background: var(--cream);
+  font-family: 'Special Elite', serif;
+  color: var(--dark);
+}
+
+/* ---- TEXT SCREENS: normal flow, scroll naturally ---- */
+.text-screen {
+  display: none;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--cream);
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 52px 32px 72px;
+}
+.text-screen.visible { display: flex; }
+
+/* ---- GAME SCREEN: fixed fullscreen, no scroll ---- */
+#screen-game {
+  display: none;
+  position: fixed;
+  inset: 0;
+  flex-direction: column;
+  background: var(--cream);
+}
+#screen-game.visible { display: flex; }
+
+/* ---- INTRO ---- */
+.intro-title {
+  font-family: 'Special Elite', serif;
+  font-size: 2.4rem;
+  letter-spacing: 0.12em;
+  margin-bottom: 40px;
+  text-align: center;
+}
+.intro-body {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.85;
+  max-width: 340px;
+  text-align: left;
+  color: #3a3530;
+  margin-bottom: 48px;
+}
+.intro-body p { margin-bottom: 1.1em; }
+.intro-body p:last-child { margin-bottom: 0; }
+
+.btn-begin {
+  font-family: 'Special Elite', serif;
+  font-size: 1rem;
+  letter-spacing: 0.15em;
+  background: none;
+  border: 2px solid var(--dark);
+  color: var(--dark);
+  padding: 12px 36px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-begin:hover { background: var(--dark); color: var(--cream); }
+
+/* ---- GAME ---- */
+#choosing-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+}
+#forest-canvas, #path-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.wood-divider {
+  height: 6px;
+  background: var(--wood);
+  flex-shrink: 0;
+}
+#panel {
+  height: 20vh;
+  min-height: 110px;
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 16px;
+  flex-shrink: 0;
+}
+.panel-controls { display: flex; gap: 12px; align-items: center; }
+.panel-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  background: none;
+  border: 1.5px solid var(--dark);
+  color: var(--dark);
+  padding: 7px 18px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.panel-btn:hover { background: var(--dark); color: var(--cream); }
+.panel-btn:disabled { opacity: 0.35; cursor: default; }
+.panel-btn.submit { border-color: var(--wood); color: var(--wood); }
+.panel-btn.submit:hover { background: var(--wood); color: var(--cream); }
+#panel-status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: #6a5f50;
+  min-height: 1.1em;
+  text-align: center;
+}
+#timer-display {
+  font-family: 'Special Elite', serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  min-height: 1.4em;
+  text-align: center;
+}
+#outcome-display {
+  font-family: 'Special Elite', serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  min-height: 1.3em;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* ---- END / AUTHOR SCREENS ---- */
+.end-question {
+  font-family: 'Special Elite', serif;
+  font-size: 1.35rem;
+  line-height: 1.5;
+  text-align: center;
+  max-width: 300px;
+  margin-bottom: 28px;
+}
+.end-outcome {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+.end-timer {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  color: #6a5f50;
+  margin-bottom: 32px;
+}
+.end-buttons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.btn-action {
+  font-family: 'Special Elite', serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.15em;
+  background: none;
+  border: 2px solid var(--dark);
+  color: var(--dark);
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-action:hover { background: var(--dark); color: var(--cream); }
+
+.end-divider {
+  width: 60px;
+  height: 2px;
+  background: #c0b8a8;
+  margin: 40px 0 32px;
+}
+.author-title {
+  font-family: 'Special Elite', serif;
+  font-size: 1.35rem;
+  margin-bottom: 32px;
+  text-align: center;
+}
+.end-author {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.9;
+  max-width: 320px;
+  color: #5a5040;
+  text-align: left;
+  width: 100%;
+}
+.end-author p { margin-bottom: 1.1em; }
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: INTRO -->
+<div id="screen-intro" class="text-screen visible">
+  <div class="intro-title">Pathway</div>
+  <div class="intro-body">
+    <p>You are given two points -- A and B. Between them is a forest. Your task is to find the quickest and safest path through it.</p>
+    <p>The screen is split into two parts. The top is the choosing area, where the forest and both points are visible. The bottom is the panel, where your controls live.</p>
+    <p>To build your path, tap anywhere in the choosing area. Each tap places a waypoint, numbered in order. The path connects each point with a straight line. To remove your last waypoint, use Undo. To start over, use Clear.</p>
+    <p>When you are ready, tap Submit. The system will assess the safety and time taken to travel from A to B.</p>
+  </div>
+  <button class="btn-begin" onclick="startGame()">[ Begin ]</button>
+</div>
+
+<!-- SCREEN 2: GAME -->
+<div id="screen-game">
+  <div id="choosing-area">
+    <canvas id="forest-canvas"></canvas>
+    <canvas id="path-canvas"></canvas>
+  </div>
+  <div class="wood-divider"></div>
+  <div id="panel">
+    <div id="panel-status">Place waypoints to build your path.</div>
+    <div class="panel-controls">
+      <button class="panel-btn" id="btn-undo" onclick="undoPoint()">Undo</button>
+      <button class="panel-btn" id="btn-clear" onclick="clearPoints()">Clear</button>
+      <button class="panel-btn submit" id="btn-submit" onclick="submitPath()">Submit</button>
+    </div>
+    <div id="timer-display"></div>
+    <div id="outcome-display"></div>
+  </div>
+</div>
+
+<!-- SCREEN 3: OUTCOME -->
+<div id="screen-end" class="text-screen">
+  <div class="end-question">You found a path. Try again if you want to find a quicker and safer path.</div>
+  <div class="end-outcome" id="end-outcome-text"></div>
+  <div class="end-timer" id="end-timer-text"></div>
+  <div class="end-buttons">
+    <button class="btn-action" onclick="tryAgain()">[ Try Again ]</button>
+    <button class="btn-action" onclick="showScreen('screen-author')">[ Continue — Spoilers ]</button>
+  </div>
+</div>
+
+<!-- SCREEN 4: AUTHOR NOTE -->
+<div id="screen-author" class="text-screen">
+  <div class="author-title">Author Note</div>
+  <div class="end-divider"></div>
+  <div class="end-author">
+    <p>Pathway is a game about finding solace. Essentially, solace isn't a destination you reach through a straight line. It takes turns and repetition to figure out what works for you.</p>
+    <p>I have been looking for paths to get out of feeling stuck. There is a gap between knowing and making my path out of the forest. And intention alone doesn't get me out of it, only recently have I come to terms with getting help and hoping for a path out.</p>
+    <p>So I hope Pathway brings about some solace to you as well. If anything, I hope it's a fun puzzle for you to master.</p>
+    <p>As always,</p>
+    <p>Take Care :))<br>-SA</p>
+  </div>
+</div>
+
+<script>
+// ---- STATE ----
+let waypoints = [];
+let pointA = { x: 0, y: 0 };
+let pointB = { x: 0, y: 0 };
+let forestCanvas, forestCtx, pathCanvas, pathCtx;
+let choosingArea;
+let isTraversing = false;
+let timerInterval = null;
+let elapsedMs = 0;
+let finalTime = '';
+let trees = [];
+
+const POINT_SIZE = 12;
+const DOT_RADIUS = 7;
+
+// ---- SCREEN MANAGEMENT ----
+function showScreen(id) {
+  ['screen-intro', 'screen-end', 'screen-author'].forEach(s => {
+    document.getElementById(s).classList.remove('visible');
+  });
+  document.getElementById('screen-game').classList.remove('visible');
+  const el = document.getElementById(id);
+  el.classList.add('visible');
+  window.scrollTo(0, 0);
+}
+
+// ---- INIT ----
+function startGame() {
+  document.getElementById('screen-intro').classList.remove('visible');
+  document.getElementById('screen-game').classList.add('visible');
+
+  forestCanvas = document.getElementById('forest-canvas');
+  pathCanvas = document.getElementById('path-canvas');
+  choosingArea = document.getElementById('choosing-area');
+
+  resizeCanvases();
+  generateForest();
+  drawForest();
+  setAnchors();
+  drawPath();
+
+  pathCanvas.addEventListener('click', onCanvasClick);
+  pathCanvas.addEventListener('touchstart', onCanvasTouch, { passive: false });
+  window.addEventListener('resize', onResize);
+}
+
+function resizeCanvases() {
+  const w = choosingArea.clientWidth;
+  const h = choosingArea.clientHeight;
+  forestCanvas.width = w; forestCanvas.height = h;
+  pathCanvas.width = w; pathCanvas.height = h;
+  forestCtx = forestCanvas.getContext('2d');
+  pathCtx = pathCanvas.getContext('2d');
+}
+
+function setAnchors() {
+  const w = pathCanvas.width, h = pathCanvas.height;
+  pointA = { x: w / 2, y: h - h * 0.13 };
+  pointB = { x: w / 2, y: h * 0.13 };
+}
+
+function onResize() {
+  resizeCanvases();
+  generateForest();
+  drawForest();
+  setAnchors();
+  drawPath();
+}
+
+// ---- FOREST ----
+function generateForest() {
+  const w = forestCanvas.width, h = forestCanvas.height;
+  trees = [];
+  const margin = w * 0.06;
+  const clusterCount = Math.floor((w * h) / 2200);
+  for (let i = 0; i < clusterCount; i++) {
+    const cx = margin + Math.random() * (w - margin * 2);
+    const cy = h * 0.10 + Math.random() * (h * 0.80);
+    const clusterSize = 3 + Math.floor(Math.random() * 6);
+    for (let j = 0; j < clusterSize; j++) {
+      const tx = cx + (Math.random() - 0.5) * 55;
+      const ty = cy + (Math.random() - 0.5) * 55;
+      const r = 9 + Math.random() * 16;
+      trees.push({ x: tx, y: ty, r });
+    }
+  }
+}
+
+function drawForest() {
+  const w = forestCanvas.width, h = forestCanvas.height;
+  forestCtx.clearRect(0, 0, w, h);
+
+  // Cream floor
+  forestCtx.fillStyle = '#f0ebe0';
+  forestCtx.fillRect(0, 0, w, h);
+
+  // Ground texture
+  for (let i = 0; i < 90; i++) {
+    const x = Math.random() * w, y = Math.random() * h;
+    forestCtx.beginPath();
+    forestCtx.ellipse(x, y, 12 + Math.random() * 30, 6 + Math.random() * 14, Math.random() * Math.PI, 0, Math.PI * 2);
+    forestCtx.fillStyle = `rgba(160,175,130,0.15)`;
+    forestCtx.fill();
+  }
+
+  // Trees
+  trees.forEach(tree => {
+    const { x, y, r } = tree;
+
+    // Ground shadow
+    forestCtx.beginPath();
+    forestCtx.ellipse(x + r * 0.12, y + r * 0.6, r * 0.65, r * 0.22, 0, 0, Math.PI * 2);
+    forestCtx.fillStyle = 'rgba(80,60,20,0.12)';
+    forestCtx.fill();
+
+    // Trunk
+    const tw = Math.max(2, r * 0.20), th = r * 0.42;
+    forestCtx.fillStyle = '#7a4a1a';
+    forestCtx.fillRect(x - tw / 2, y + r * 0.32, tw, th);
+    forestCtx.fillStyle = 'rgba(0,0,0,0.2)';
+    forestCtx.fillRect(x, y + r * 0.32, tw / 2, th);
+
+    // 3 stacked triangle layers
+    const layers = [
+      { yOff: r * 0.28,  w: r * 0.98, cL: '#2a6200', cR: '#1a4200' },
+      { yOff: r * 0.00,  w: r * 0.75, cL: '#338000', cR: '#205200' },
+      { yOff: -r * 0.26, w: r * 0.54, cL: '#3d9200', cR: '#286200' },
+    ];
+    layers.forEach(l => {
+      const ty = y + l.yOff, hw = l.w / 2, th = l.w * 0.86;
+      const tip = ty - th * 0.5, base = ty + th * 0.5;
+      forestCtx.beginPath();
+      forestCtx.moveTo(x, tip); forestCtx.lineTo(x - hw, base); forestCtx.lineTo(x, base);
+      forestCtx.closePath(); forestCtx.fillStyle = l.cL; forestCtx.fill();
+      forestCtx.beginPath();
+      forestCtx.moveTo(x, tip); forestCtx.lineTo(x + hw, base); forestCtx.lineTo(x, base);
+      forestCtx.closePath(); forestCtx.fillStyle = l.cR; forestCtx.fill();
+      forestCtx.beginPath();
+      forestCtx.moveTo(x, tip); forestCtx.lineTo(x + hw, base); forestCtx.lineTo(x - hw, base);
+      forestCtx.closePath(); forestCtx.strokeStyle = 'rgba(0,0,0,0.15)'; forestCtx.lineWidth = 0.6; forestCtx.stroke();
+    });
+  });
+}
+
+// ---- PATH ----
+function drawPath() {
+  const w = pathCanvas.width, h = pathCanvas.height;
+  pathCtx.clearRect(0, 0, w, h);
+
+  if (waypoints.length > 0 || isTraversing) {
+    pathCtx.beginPath();
+    pathCtx.moveTo(pointA.x, pointA.y);
+    waypoints.forEach(p => pathCtx.lineTo(p.x, p.y));
+    pathCtx.lineTo(pointB.x, pointB.y);
+    pathCtx.strokeStyle = 'rgba(30,20,10,0.7)';
+    pathCtx.lineWidth = 1.5;
+    pathCtx.setLineDash([5, 4]);
+    pathCtx.stroke();
+    pathCtx.setLineDash([]);
+  }
+
+  waypoints.forEach((p, i) => {
+    pathCtx.strokeStyle = '#1a1a1a'; pathCtx.lineWidth = 2;
+    pathCtx.fillStyle = '#ffffff';
+    pathCtx.fillRect(p.x - POINT_SIZE / 2, p.y - POINT_SIZE / 2, POINT_SIZE, POINT_SIZE);
+    pathCtx.strokeRect(p.x - POINT_SIZE / 2, p.y - POINT_SIZE / 2, POINT_SIZE, POINT_SIZE);
+    pathCtx.font = 'bold 11px Special Elite, serif';
+    const nx = p.x - POINT_SIZE / 2 - 11, ny = p.y - POINT_SIZE / 2 - 3;
+    pathCtx.strokeStyle = 'rgba(0,0,0,0.75)'; pathCtx.lineWidth = 3;
+    pathCtx.strokeText(i + 1, nx, ny);
+    pathCtx.fillStyle = '#ffffff'; pathCtx.fillText(i + 1, nx, ny);
+  });
+
+  drawAnchor(pointA, 'A');
+  drawAnchor(pointB, 'B');
+}
+
+function drawAnchor(pt, label) {
+  pathCtx.strokeStyle = '#1a1a1a'; pathCtx.lineWidth = 2;
+  pathCtx.fillStyle = '#ffffff';
+  pathCtx.fillRect(pt.x - POINT_SIZE / 2, pt.y - POINT_SIZE / 2, POINT_SIZE, POINT_SIZE);
+  pathCtx.strokeRect(pt.x - POINT_SIZE / 2, pt.y - POINT_SIZE / 2, POINT_SIZE, POINT_SIZE);
+  pathCtx.font = 'bold 14px Special Elite, serif';
+  const tw = pathCtx.measureText(label).width;
+  const lx = pt.x - tw / 2, ly = pt.y - POINT_SIZE / 2 - 6;
+  pathCtx.strokeStyle = 'rgba(0,0,0,0.7)'; pathCtx.lineWidth = 3;
+  pathCtx.strokeText(label, lx, ly);
+  pathCtx.fillStyle = '#ffffff'; pathCtx.fillText(label, lx, ly);
+}
+
+// ---- INPUT ----
+function onCanvasClick(e) {
+  if (isTraversing) return;
+  const rect = pathCanvas.getBoundingClientRect();
+  addWaypoint(e.clientX - rect.left, e.clientY - rect.top);
+}
+function onCanvasTouch(e) {
+  if (isTraversing) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = pathCanvas.getBoundingClientRect();
+  addWaypoint(touch.clientX - rect.left, touch.clientY - rect.top);
+}
+function addWaypoint(x, y) {
+  const distB = Math.hypot(x - pointB.x, y - pointB.y);
+  const distA = Math.hypot(x - pointA.x, y - pointA.y);
+  if (distB < POINT_SIZE * 3 && waypoints.length === 0) { submitPath(); return; }
+  if (distB < POINT_SIZE * 2 || distA < POINT_SIZE * 2) return;
+  waypoints.push({ x, y });
+  updateStatus(); drawPath();
+}
+function undoPoint() {
+  if (waypoints.length === 0) return;
+  waypoints.pop(); updateStatus(); drawPath();
+}
+function clearPoints() {
+  waypoints = []; updateStatus(); drawPath();
+  document.getElementById('timer-display').textContent = '';
+  document.getElementById('outcome-display').textContent = '';
+}
+function updateStatus() {
+  const n = waypoints.length;
+  document.getElementById('panel-status').textContent =
+    n === 0 ? 'Place waypoints to build your path.' :
+    n === 1 ? '1 waypoint placed.' : `${n} waypoints placed.`;
+}
+
+// ---- SCORING ----
+function angleBetween(p1, v, p2) {
+  const ax = p1.x - v.x, ay = p1.y - v.y;
+  const bx = p2.x - v.x, by = p2.y - v.y;
+  const dot = ax * bx + ay * by;
+  const mag = Math.hypot(ax, ay) * Math.hypot(bx, by);
+  if (mag === 0) return 180;
+  return (Math.acos(Math.max(-1, Math.min(1, dot / mag))) * 180) / Math.PI;
+}
+function scorePath() {
+  const all = [pointA, ...waypoints, pointB];
+  const bendCount = waypoints.length;
+  if (bendCount === 0) return { outcome: 'most-unsafe', score: 0 };
+  const turnAngles = [];
+  for (let i = 1; i < all.length - 1; i++) {
+    turnAngles.push(180 - angleBetween(all[i - 1], all[i], all[i + 1]));
+  }
+  const angleSum = turnAngles.reduce((s, a) => s + a, 0);
+  const mean = angleSum / turnAngles.length;
+  const stdDev = Math.sqrt(turnAngles.reduce((s, a) => s + Math.pow(a - mean, 2), 0) / turnAngles.length);
+
+  const bendScore = bendCount >= 5 && bendCount <= 8 ? 1 : bendCount >= 3 && bendCount <= 10 ? 0.5 : 0;
+  const angleSumScore = angleSum >= 180 && angleSum <= 480 ? 1 : angleSum >= 80 && angleSum <= 600 ? 0.5 : 0;
+  const varianceScore = stdDev < 40 ? 1 : stdDev < 70 ? 0.5 : 0;
+  const total = bendScore + angleSumScore + varianceScore;
+
+  let outcome = total >= 2.5 ? 'safe' : total >= 1.2 ? 'moderate' : 'unsafe';
+  if (bendScore === 1 && angleSumScore === 1 && varianceScore === 1) outcome = 'safest';
+  return { outcome, score: total };
+}
+
+// ---- TRAVERSAL ----
+function submitPath() {
+  if (isTraversing) return;
+  isTraversing = true;
+  document.getElementById('btn-undo').disabled = true;
+  document.getElementById('btn-clear').disabled = true;
+  document.getElementById('btn-submit').disabled = true;
+  document.getElementById('panel-status').textContent = 'Assessing path...';
+  document.getElementById('timer-display').textContent = '';
+  document.getElementById('outcome-display').textContent = '';
+
+  const result = scorePath();
+  const all = [pointA, ...waypoints, pointB];
+
+  let durationMs;
+  if (result.outcome === 'most-unsafe') { durationMs = 12000; }
+  else if (result.outcome === 'unsafe') { durationMs = 10000 - Math.min(result.score / 1.2, 1) * 3000; }
+  else if (result.outcome === 'moderate') { durationMs = 7000 - Math.min((result.score - 1.2) / 1.3, 1) * 3000; }
+  else if (result.outcome === 'safe') { durationMs = 4000 - Math.min((result.score - 2.5) / 0.5, 1) * 1500; }
+  else { durationMs = 2000; }
+
+  elapsedMs = 0;
+  const startTime = performance.now();
+  timerInterval = setInterval(() => {
+    elapsedMs = performance.now() - startTime;
+    document.getElementById('timer-display').textContent = formatTime(elapsedMs);
+  }, 50);
+
+  animateDot(all, durationMs, result);
+}
+
+function animateDot(points, durationMs, result) {
+  const startTime = performance.now();
+  const segLengths = [];
+  let totalLen = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const l = Math.hypot(points[i+1].x - points[i].x, points[i+1].y - points[i].y);
+    segLengths.push(l); totalLen += l;
+  }
+  function frame(now) {
+    const progress = Math.min((now - startTime) / durationMs, 1);
+    const dist = progress * totalLen;
+    let cum = 0, dotX = points[0].x, dotY = points[0].y;
+    for (let i = 0; i < segLengths.length; i++) {
+      if (dist <= cum + segLengths[i]) {
+        const t = (dist - cum) / segLengths[i];
+        dotX = points[i].x + t * (points[i+1].x - points[i].x);
+        dotY = points[i].y + t * (points[i+1].y - points[i].y);
+        break;
+      }
+      cum += segLengths[i];
+      dotX = points[i+1].x; dotY = points[i+1].y;
+    }
+    drawPath();
+    pathCtx.beginPath();
+    pathCtx.arc(dotX, dotY, DOT_RADIUS, 0, Math.PI * 2);
+    pathCtx.fillStyle = '#f5c800'; pathCtx.fill();
+    if (progress < 1) { requestAnimationFrame(frame); }
+    else {
+      clearInterval(timerInterval);
+      finalTime = formatTime(elapsedMs);
+      showOutcome(result);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function formatTime(ms) {
+  return `${Math.floor(ms/1000)}.${Math.floor((ms%1000)/100)}s`;
+}
+
+function showOutcome(result) {
+  const map = {
+    'most-unsafe': ['Most Unsafe Pathway reached.', '#8f1a1a'],
+    'safest':      ['Safest Pathway reached.',      '#2d7a2d'],
+    'safe':        ['Safe.',                         '#2d7a2d'],
+    'moderate':    ['Moderate.',                     '#1a4a8f'],
+    'unsafe':      ['Unsafe.',                       '#8f1a1a'],
+  };
+  const [text, color] = map[result.outcome] || ['Unsafe.', '#8f1a1a'];
+  document.getElementById('panel-status').textContent = 'Assessment complete.';
+  const outcomeEl = document.getElementById('outcome-display');
+  outcomeEl.textContent = text; outcomeEl.style.color = color;
+
+  setTimeout(() => {
+    document.getElementById('end-outcome-text').textContent = text;
+    document.getElementById('end-outcome-text').style.color = color;
+    document.getElementById('end-timer-text').textContent = `Time: ${finalTime}`;
+    showScreen('screen-end');
+  }, 2500);
+}
+
+function tryAgain() {
+  waypoints = []; isTraversing = false; elapsedMs = 0;
+  clearInterval(timerInterval);
+  document.getElementById('btn-undo').disabled = false;
+  document.getElementById('btn-clear').disabled = false;
+  document.getElementById('btn-submit').disabled = false;
+  document.getElementById('panel-status').textContent = 'Place waypoints to build your path.';
+  document.getElementById('timer-display').textContent = '';
+  document.getElementById('outcome-display').textContent = '';
+  document.getElementById('screen-end').classList.remove('visible');
+  document.getElementById('screen-game').classList.add('visible');
+  drawPath();
+}
+</script>
+</body>
+</html>
